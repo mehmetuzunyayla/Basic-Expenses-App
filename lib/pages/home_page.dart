@@ -1,18 +1,18 @@
 import 'package:expenses_app/components/expense_summary.dart';
 import 'package:expenses_app/components/expense_tile.dart';
-import 'package:expenses_app/data/expense_data.dart';
+import 'package:expenses_app/main.dart';
 import 'package:expenses_app/models/expense_item.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   //text controllers
   final newExpenseNameController = TextEditingController();
   final newExpenseDollarController = TextEditingController();
@@ -22,7 +22,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     //prepare data on startup
-    Provider.of<ExpenseData>(context, listen: false).preparedData();
+    ref.read(expenseDataProvider).preparedData(); // Using ref.read
   }
 
   void addNewExpense() {
@@ -84,23 +84,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   //delete expense
-  void deleteExpense(ExpenseItem expense) {
-    Provider.of<ExpenseData>(context, listen: false).deleteExpense(expense);
+  void deleteExpense(BuildContext context, ExpenseItem expense) {
+    ref.read(expenseDataProvider).deleteExpense(expense);
   }
 
   //save
   void save() {
-    // put dollars and cents together
-    String amount =
-        '${newExpenseDollarController.text}.${newExpenseCentsController.text}';
-    //create expense item
-    ExpenseItem newExpense = ExpenseItem(
-      name: newExpenseNameController.text,
-      amount: amount,
-      dateTime: DateTime.now(),
-    );
-    // add the new expense
-    Provider.of<ExpenseData>(context, listen: false).addNewExpense(newExpense);
+    if (newExpenseNameController.text.isNotEmpty &&
+        newExpenseDollarController.text.isNotEmpty &&
+        newExpenseCentsController.text.isNotEmpty) {
+      // put dollars and cents together
+      String amount =
+          '${newExpenseDollarController.text}.${newExpenseCentsController.text}';
+      //create expense item
+      ExpenseItem newExpense = ExpenseItem(
+        name: newExpenseNameController.text,
+        amount: amount,
+        dateTime: DateTime.now(),
+      );
+      // add the new expense
+      ref.read(expenseDataProvider).addNewExpense(newExpense); // Using ref.read
+    }
 
     Navigator.pop(context);
     clear();
@@ -120,9 +124,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ExpenseData>(
-      builder: (context, value, child) => Scaffold(
-          backgroundColor: Color.fromARGB(255, 240, 238, 238),
+    return Consumer(
+      builder: (context, ref, child) {
+        final value = ref.watch(expenseDataProvider); // Using ref.watch
+        return Scaffold(
+          backgroundColor: const Color.fromARGB(255, 240, 238, 238),
           floatingActionButton: FloatingActionButton(
             onPressed: addNewExpense,
             backgroundColor: Colors.black,
@@ -130,10 +136,8 @@ class _HomePageState extends State<HomePage> {
           ),
           body: ListView(
             children: [
-              //weekly summary
               ExpenseSummary(startOfWeek: value.startOfWeekDate()),
               const SizedBox(height: 20),
-              //expense list
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -142,12 +146,14 @@ class _HomePageState extends State<HomePage> {
                   name: value.getAllExpenseList()[index].name,
                   amount: value.getAllExpenseList()[index].amount,
                   dateTime: value.getAllExpenseList()[index].dateTime,
-                  deleteTapped: (p0) =>
-                      deleteExpense(value.getAllExpenseList()[index]),
+                  deleteTapped: (BuildContext context) =>
+                      deleteExpense(context, value.getAllExpenseList()[index]),
                 ),
               ),
             ],
-          )),
+          ),
+        );
+      },
     );
   }
 }

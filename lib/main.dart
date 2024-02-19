@@ -1,16 +1,19 @@
 import 'package:expenses_app/data/expense_data.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/adapters.dart';
-import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'pages/home_page.dart';
 
+final expenseDataProvider = ChangeNotifierProvider((ref) => ExpenseData());
+
 Future<void> main() async {
-  //initialize hive
+  // Initialize Hive
   await Hive.initFlutter();
 
-  // open a hive box
+  // Open a Hive box
   await Hive.openBox('expense_database');
-  runApp(const MyApp());
+
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -18,12 +21,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => ExpenseData(),
-      builder: (context, child) => const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: HomePage(),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: HomePage(),
     );
   }
 }
