@@ -62,6 +62,14 @@ class ExpenseSummary extends ConsumerWidget {
     return total.toStringAsFixed(2);
   }
 
+  String calculateTodayTotal(ExpenseData value) {
+    String today =
+        convertDateTimeToString(DateTime.now()); // Format today's date
+    double todayTotal = value.calculateDailyExpenseSummary()[today] ?? 0;
+    return todayTotal.toStringAsFixed(
+        2); // Convert the total to a string with 2 decimal places
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Added WidgetRef ref parameter
@@ -83,18 +91,23 @@ class ExpenseSummary extends ConsumerWidget {
     final value = ref.watch(expenseDataProvider); // Using ref.watch
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(
+            height: 20), // You can adjust this value to fit your needs
         Padding(
-          padding: const EdgeInsets.all(25.0),
-          child: Row(
-            children: [
-              const Text(
-                "Week Total:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                  '\$${calculateWeekTotal(value, sunday, monday, tuesday, wednesday, thursday, friday, saturday)}'),
-            ],
+          padding:
+              const EdgeInsets.fromLTRB(25.0, 0, 25.0, 8.0), // Add top padding
+          child: Text(
+            "Week Total: \$${calculateWeekTotal(value, monday, tuesday, wednesday, thursday, friday, saturday, sunday)}",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(25.0, 0, 25.0, 8.0),
+          child: Text(
+            "Today's expenses: \$${calculateTodayTotal(value)}",
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
         SizedBox(

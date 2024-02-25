@@ -17,6 +17,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   final newExpenseNameController = TextEditingController();
   final newExpenseDollarController = TextEditingController();
   final newExpenseCentsController = TextEditingController();
+  String? selectedDate;
+
+  void setSelectedDate(String date) {
+    setState(() {
+      selectedDate = date;
+    });
+  }
 
   @override
   void initState() {
@@ -37,7 +44,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             TextField(
               controller: newExpenseNameController,
               decoration: const InputDecoration(
-                hintText: "Expense Name",
+                hintText: "*Expense Name",
               ),
             ),
             Row(
@@ -48,7 +55,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     controller: newExpenseDollarController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      hintText: "Dollars",
+                      hintText: "*Dollars",
                     ),
                   ),
                 ),
@@ -59,7 +66,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     controller: newExpenseCentsController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      hintText: "Cents",
+                      hintText: "*Cents",
                     ),
                   ),
                 ),
@@ -71,12 +78,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           //save button
           MaterialButton(
             onPressed: save,
-            child: Text('Save'),
+            child: const Text('Save'),
           ),
 
           MaterialButton(
             onPressed: cancel,
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -90,24 +97,46 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   //save
   void save() {
-    if (newExpenseNameController.text.isNotEmpty &&
-        newExpenseDollarController.text.isNotEmpty &&
-        newExpenseCentsController.text.isNotEmpty) {
-      // put dollars and cents together
+    bool isNameEmpty = newExpenseNameController.text.isEmpty;
+    bool isDollarValid =
+        RegExp(r'^\d+$').hasMatch(newExpenseDollarController.text);
+    bool isCentsValid =
+        RegExp(r'^\d+$').hasMatch(newExpenseCentsController.text);
+
+    if (isNameEmpty || !isDollarValid || !isCentsValid) {
+      String errorMessage = 'Please fill in all the fields correctly.';
+      if (isNameEmpty) {
+        errorMessage += '\nName is required.';
+      }
+      if (!isDollarValid) {
+        errorMessage += '\nDollars must be a number or fill the field.';
+      }
+      if (!isCentsValid) {
+        errorMessage += '\nCents must be a number or fill the field.';
+      }
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          //backgroundColor: Colors.red,
+        ),
+      );
+    } else {
+      // Put dollars and cents together
       String amount =
           '${newExpenseDollarController.text}.${newExpenseCentsController.text}';
-      //create expense item
+      // Create expense item
       ExpenseItem newExpense = ExpenseItem(
         name: newExpenseNameController.text,
         amount: amount,
         dateTime: DateTime.now(),
       );
-      // add the new expense
+      // Add the new expense
       ref.read(expenseDataProvider).addNewExpense(newExpense); // Using ref.read
-    }
 
-    Navigator.pop(context);
-    clear();
+      Navigator.pop(context);
+      clear();
+    }
   }
 
   //cancel
